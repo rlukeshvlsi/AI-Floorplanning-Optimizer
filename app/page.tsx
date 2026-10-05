@@ -31,9 +31,17 @@ type Result = {
   optimized_image?: string;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:8000/api/optimize";
+/*
+ * IMPORTANT:
+ * This is intentionally /api/optimize.
+ *
+ * Local:
+ *     FastAPI service handles /api/optimize
+ *
+ * Vercel:
+ *     Vercel Services routes /api/* to the FastAPI service.
+ */
+const API_URL = "/api/optimize";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -47,7 +55,9 @@ export default function Home() {
   ) {
     const selected = event.target.files?.[0];
 
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
 
     if (!selected.type.startsWith("image/")) {
       setError("Please upload a PNG or JPG floorplan image.");
@@ -95,7 +105,7 @@ export default function Home() {
       const message =
         err instanceof Error
           ? err.message
-          : "Could not connect to the optimizer.";
+          : "Could not connect to the AI optimizer.";
 
       setError(message);
     } finally {
@@ -112,17 +122,13 @@ export default function Home() {
 
         <div className="mx-auto max-w-7xl px-6 py-6">
 
-          <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            AI Floorplanning Optimizer
+          </h1>
 
-            <h1 className="text-3xl font-bold tracking-tight">
-              AI Floorplanning Optimizer
-            </h1>
-
-            <p className="text-slate-400">
-              ML-assisted VLSI macro floorplan optimization
-            </p>
-
-          </div>
+          <p className="mt-2 text-slate-400">
+            ML-assisted VLSI macro floorplan optimization
+          </p>
 
         </div>
 
@@ -133,36 +139,32 @@ export default function Home() {
 
       <section className="mx-auto max-w-7xl px-6 py-10">
 
-        {/* UPLOAD CARD */}
+        {/* UPLOAD SECTION */}
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
 
-          <div className="mb-6">
+          <h2 className="text-2xl font-semibold">
+            Upload Floorplan
+          </h2>
 
-            <h2 className="text-2xl font-semibold">
-              Upload Floorplan
-            </h2>
-
-            <p className="mt-2 text-slate-400">
-              Upload your existing floorplan image. The system
-              detects the macro locations and uses the trained
-              Random Forest model to optimize the placement.
-            </p>
-
-          </div>
+          <p className="mt-2 text-slate-400">
+            Upload your existing floorplan image. The system
+            detects the macro positions and uses the trained
+            Random Forest model to optimize the placement.
+          </p>
 
 
-          {/* FILE INPUT */}
+          {/* FILE UPLOAD */}
 
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-700 bg-slate-950 p-10 transition hover:border-blue-500">
+          <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-700 bg-slate-950 p-10 transition hover:border-blue-500">
 
             <div className="text-center">
 
-              <div className="mb-3 text-4xl">
+              <div className="mb-3 text-5xl">
                 📤
               </div>
 
-              <div className="text-lg font-medium">
+              <div className="text-xl font-semibold">
                 Choose Floorplan Image
               </div>
 
@@ -182,6 +184,23 @@ export default function Home() {
           </label>
 
 
+          {/* FILE NAME */}
+
+          {file && (
+
+            <div className="mt-4 rounded-lg bg-slate-800 px-4 py-3 text-sm text-slate-300">
+
+              Selected file:
+
+              <span className="ml-2 font-semibold text-white">
+                {file.name}
+              </span>
+
+            </div>
+
+          )}
+
+
           {/* PREVIEW */}
 
           {preview && (
@@ -197,7 +216,7 @@ export default function Home() {
                 <img
                   src={preview}
                   alt="Uploaded floorplan"
-                  className="mx-auto max-h-[500px] w-auto object-contain"
+                  className="mx-auto max-h-[550px] w-auto object-contain"
                 />
 
               </div>
@@ -207,24 +226,7 @@ export default function Home() {
           )}
 
 
-          {/* FILE NAME */}
-
-          {file && (
-
-            <div className="mt-4 rounded-lg bg-slate-800 px-4 py-3 text-sm text-slate-300">
-
-              Selected file:
-
-              <span className="ml-2 font-medium text-white">
-                {file.name}
-              </span>
-
-            </div>
-
-          )}
-
-
-          {/* OPTIMIZE BUTTON */}
+          {/* BUTTON */}
 
           <button
             onClick={optimizeFloorplan}
@@ -256,26 +258,27 @@ export default function Home() {
 
         {/* RESULTS */}
 
-        {result && result.success && (
+        {result?.success && (
 
           <div className="mt-10 space-y-8">
 
+            {/* RESULT HEADER */}
+
             <div>
 
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-3xl font-bold">
                 Optimization Results
               </h2>
 
               <p className="mt-2 text-slate-400">
-                The uploaded floorplan was processed using the
-                trained Random Forest surrogate model followed
-                by actual evaluation and local refinement.
+                Random Forest candidate screening followed by
+                actual QoR evaluation and local refinement.
               </p>
 
             </div>
 
 
-            {/* KPI CARDS */}
+            {/* METRICS */}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 
@@ -292,7 +295,6 @@ export default function Home() {
               <Metric
                 title="QoR Improvement"
                 value={result.improvement}
-                suffix=""
               />
 
               <Metric
@@ -323,7 +325,7 @@ export default function Home() {
                     <img
                       src={preview}
                       alt="Original floorplan"
-                      className="mx-auto max-h-[500px] w-auto object-contain"
+                      className="mx-auto max-h-[550px] w-auto object-contain"
                     />
 
                   )}
@@ -348,7 +350,7 @@ export default function Home() {
                     <img
                       src={result.optimized_image}
                       alt="Optimized floorplan"
-                      className="mx-auto max-h-[500px] w-auto object-contain"
+                      className="mx-auto max-h-[550px] w-auto object-contain"
                     />
 
                   )}
@@ -360,7 +362,7 @@ export default function Home() {
             </div>
 
 
-            {/* PLACEMENT */}
+            {/* PLACEMENT TABLES */}
 
             <div className="grid gap-6 lg:grid-cols-2">
 
@@ -422,7 +424,7 @@ export default function Home() {
             </div>
 
 
-            {/* METHOD */}
+            {/* PIPELINE */}
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
 
@@ -478,7 +480,7 @@ export default function Home() {
 
 
 /* ============================================================
-   COMPONENTS
+   METRIC
    ============================================================ */
 
 function Metric({
@@ -511,6 +513,10 @@ function Metric({
 }
 
 
+/* ============================================================
+   DETAIL
+   ============================================================ */
+
 function Detail({
   label,
   value,
@@ -539,6 +545,10 @@ function Detail({
 
 }
 
+
+/* ============================================================
+   PLACEMENT CARD
+   ============================================================ */
 
 function PlacementCard({
   title,
@@ -617,6 +627,10 @@ function PlacementCard({
 
 }
 
+
+/* ============================================================
+   PIPELINE STEP
+   ============================================================ */
 
 function Step({
   number,
